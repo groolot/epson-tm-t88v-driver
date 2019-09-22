@@ -1,0 +1,35 @@
+image: debian:stable
+
+before_script:
+  - apt-get update -qq
+  - apt-get install -y -qq build-essential autoconf automake
+  - autoreconf --install
+  - ./configure
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script:
+    - make
+    - src/projet-exemple
+
+install:
+  stage: build
+  script:
+    - make
+    - make install
+
+tarball:
+  stage: deploy
+  only:
+    - tags
+    - master
+  script:
+    - make distcheck
+  artifacts:
+    name: "tarball"
+    paths:
+      - projet-exemple*.tar.gz
