@@ -2,12 +2,13 @@ image: debian:stable
 
 before_script:
   - apt-get update -qq
-  - apt-get install -y -qq build-essential autoconf automake
-  - autoreconf --install
+  - apt-get install -y -qq build-essential autoconf autoconf-archive automake libtool libcppunit-dev pkg-config
+  - autoreconf --install --verbose --force
   - ./configure
 
 stages:
   - build
+  - test
   - deploy
 
 build:
@@ -16,11 +17,10 @@ build:
     - make
     - src/projet-exemple
 
-install:
-  stage: build
+test:
+  stage: test
   script:
-    - make
-    - make install
+    - make check
 
 tarball:
   stage: deploy
@@ -32,4 +32,4 @@ tarball:
   artifacts:
     name: "tarball"
     paths:
-      - projet-exemple*.tar.gz
+      - "*.tar.gz"
