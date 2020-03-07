@@ -1,8 +1,8 @@
 #include "arithmetique.h"
 
-int arithmetique::addition(int operandeA, int operandeB)
+long int arithmetique::addition(int operandeA, int operandeB)
 {
-  return operandeA + operandeB;
+  return static_cast<long int>(operandeA) + operandeB;
 }
 
 int arithmetique::soustraction(int operandeA, int operandeB)

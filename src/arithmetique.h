@@ -2,7 +2,7 @@
 #define ARITHMETIQUE_H
 
 namespace arithmetique {
-  int addition(int, int);
+  long int addition(int, int);
   int soustraction(int, int);
   int multiplication(int, int);
   int division(int, int);
