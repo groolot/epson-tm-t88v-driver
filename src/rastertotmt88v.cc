@@ -144,7 +144,6 @@ static int WriteBand(cups_page_header2_t *, unsigned char *, unsigned);
 
 static int WriteUserFile(char *, const char *);
 static unsigned int ReadUserFile(int, void *, unsigned int);
-static int FeedPaper(EPTMS_CONFIG_T *, cups_page_header2_t *, unsigned);
 static int WriteData(unsigned char *, unsigned int);
 
 int main(int argc, char **argv)
@@ -742,14 +741,6 @@ static int EndJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *, cups_page_header
         return 2202;
       }
 
-      result = FeedPaper(p_config, p_header,
-                         static_cast<unsigned int>((p_config->v_motionUnit * 10) / 254));
-
-      if(EPTMD_SUCCESS != result)
-      {
-        return 2203;
-      }
-
       break;
 
     default:
@@ -826,14 +817,6 @@ static int EndPage(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header)
         return 3202;
       }
 
-      result = FeedPaper(p_config, p_header,
-                         static_cast<unsigned int>((p_config->v_motionUnit * 10) / 254));
-
-      if(EPTMD_SUCCESS != result)
-      {
-        return 3203;
-      }
-
       break;
 
     default:
@@ -900,16 +883,6 @@ static int WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, 
 
   if(p_header->cupsHeight == start_line_no) /* This page has not image */
   {
-    if(TmPaperReductionOff == p_config->paperReduction)
-    {
-      result = FeedPaper(p_config, p_header, p_header->cupsHeight);
-
-      if(EPTMD_SUCCESS != result)
-      {
-        return 3401;
-      }
-    }
-
     return EPTMD_SUCCESS;
   }
 
@@ -917,17 +890,6 @@ static int WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, 
   last_line_no = FindBlackRasterLineEnd(p_header, p_pageBuffer) + 1;
   // Avoid disturbing data
   AvoidDisturbingData(p_header, p_pageBuffer, start_line_no, last_line_no);
-
-  // Command output : top margin
-  if(!((TmPaperReductionTop == p_config->paperReduction) || (TmPaperReductionBoth == p_config->paperReduction)))
-  {
-    result = FeedPaper(p_config, p_header, start_line_no);
-
-    if(EPTMD_SUCCESS != result)
-    {
-      return 3402;
-    }
-  }
 
   // Command output : raster data (band unit)
   for(line_no = start_line_no; (line_no + p_config->maxBandLines) < last_line_no; line_no += p_config->maxBandLines)
@@ -955,17 +917,6 @@ static int WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, 
     if(EPTMD_SUCCESS != result)
     {
       return 3404;
-    }
-  }
-
-  // Command output : Bottom margin
-  if(!((TmPaperReductionBottom == p_config->paperReduction) || (TmPaperReductionBoth == p_config->paperReduction)))
-  {
-    result = FeedPaper(p_config, p_header, (p_header->cupsHeight - last_line_no));
-
-    if(EPTMD_SUCCESS != result)
-    {
-      return 3405;
     }
   }
 
@@ -1154,49 +1105,6 @@ static unsigned int ReadUserFile(int fd, void *p_buffer, unsigned int buffer_siz
   }
 
   return static_cast<unsigned int>(total_size);
-}
-
-static int FeedPaper(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, unsigned num_line)
-{
-  unsigned char Command[3] = { ESC, 'J', 0xFF };
-  unsigned point = 0;
-  double integral = 0.0;
-  double correction = (double)(num_line * p_config->v_motionUnit) / (double)p_header->HWResolution[1];
-  double fractional = modf(correction, &integral);
-
-  if(fractional == 0) {} // warning
-
-  point = (unsigned)integral;
-
-  if(0 == point)
-  {
-    return EPTMD_SUCCESS;
-  }
-
-  int result = EPTMD_SUCCESS;
-
-  for(; 0xff < point; point -= 0xff)
-  {
-    result = WriteData(Command, sizeof(Command));
-
-    if(EPTMD_SUCCESS != result)
-    {
-      return result;
-    }
-  }
-
-  if(0 < point)
-  {
-    Command[2] = (unsigned char)point;
-    result = WriteData(Command, sizeof(Command));
-
-    if(EPTMD_SUCCESS != result)
-    {
-      return result;
-    }
-  }
-
-  return EPTMD_SUCCESS;
 }
 
 static int WriteData(unsigned char *p_buffer, unsigned int size)
