@@ -23,6 +23,7 @@
 #include <cups/ppd.h>
 #include <cups/raster.h>
 
+#include <cstdint>
 #include <csignal>
 #include <fcntl.h>
 #include <errno.h>
@@ -106,6 +107,8 @@ typedef struct
   unsigned char *p_pageBuffer;
 } EPTMS_JOB_INFO_T; // Job Information parameters
 
+using result_t = std::uint16_t;
+
 /*----------------------------
  * Global variable declaration
  *----------------------------*/
@@ -115,43 +118,43 @@ char g_TmCanceled;
  * Static function prototype declaration
  *--------------------------------------*/
 static void fprintf_DebugLog(EPTMS_CONFIG_T *);
-static int Init(int, char *[], EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *, int *);
-static int InitSignal(void);
+static result_t Init(int, char *[], EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *, int *);
+static result_t InitSignal(void);
 static void SignalCallback(int);
-static int GetParameters(char *[], EPTMS_CONFIG_T *);
-static int GetModelSpecificFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
-static int GetPaperReductionFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
-static int GetBuzzerAndDrawerFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
-static int GetPaperCutFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
+static result_t GetParameters(char *[], EPTMS_CONFIG_T *);
+static result_t GetModelSpecificFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
+static result_t GetPaperReductionFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
+static result_t GetBuzzerAndDrawerFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
+static result_t GetPaperCutFromPPD(ppd_file_t *, EPTMS_CONFIG_T *);
 static void Exit(EPTMS_JOB_INFO_T *, int *);
 
-static int DoJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
-static int StartJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
-static int OpenDrawer(EPTMS_CONFIG_T *);
-static int SoundBuzzer(EPTMS_CONFIG_T *);
-static int EndJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *, cups_page_header2_t *);
+static result_t DoJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
+static result_t StartJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
+static result_t OpenDrawer(EPTMS_CONFIG_T *);
+static result_t SoundBuzzer(EPTMS_CONFIG_T *);
+static result_t EndJob(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *, cups_page_header2_t *);
 
-static int DoPage(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
-static int StartPage(EPTMS_CONFIG_T *);
-static int EndPage(EPTMS_CONFIG_T *, cups_page_header2_t *);
-static int ReadRaster(cups_page_header2_t *, cups_raster_t *, unsigned char *);
+static result_t DoPage(EPTMS_CONFIG_T *, EPTMS_JOB_INFO_T *);
+static result_t StartPage(EPTMS_CONFIG_T *);
+static result_t EndPage(EPTMS_CONFIG_T *, cups_page_header2_t *);
+static result_t ReadRaster(cups_page_header2_t *, cups_raster_t *, unsigned char *);
 static void TransferRaster(unsigned char *, unsigned char *, cups_page_header2_t *, unsigned);
-static int WriteRaster(EPTMS_CONFIG_T *, cups_page_header2_t *, unsigned char *);
+static result_t WriteRaster(EPTMS_CONFIG_T *, cups_page_header2_t *, unsigned char *);
 static void AvoidDisturbingData(cups_page_header2_t *, unsigned char *, unsigned, unsigned);
 static unsigned FindBlackRasterLineTop(cups_page_header2_t *, unsigned char *);
 static unsigned FindBlackRasterLineEnd(cups_page_header2_t *, unsigned char *);
-static int WriteBand(cups_page_header2_t *, unsigned char *, unsigned);
+static result_t WriteBand(cups_page_header2_t *, unsigned char *, unsigned);
 
-static int WriteUserFile(char *, const char *);
+static result_t WriteUserFile(char *, const char *);
 static unsigned int ReadUserFile(int, void *, unsigned int);
-static int WriteData(unsigned char *, unsigned int);
+static result_t WriteData(unsigned char *, unsigned int);
 
 int main(int argc, char **argv)
 {
   EPTMS_JOB_INFO_T JobInfo = {0};
   EPTMS_CONFIG_T Config = {0};
   int InputFd = -1;
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   // Initializes process.
   result = Init(argc, argv, &Config, &JobInfo, &InputFd);
 
@@ -187,9 +190,12 @@ static void fprintf_DebugLog(EPTMS_CONFIG_T *p_config)
   fprintf(stderr, "DEBUG: maxBandLines = %u\n", p_config->maxBandLines);
 }
 
-static int Init(int argc, char *argv[], EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo, int *p_InputFd)
+static result_t Init(int argc, char *argv[],
+                     EPTMS_CONFIG_T *p_config,
+                     EPTMS_JOB_INFO_T *p_jobInfo,
+                     int *p_InputFd)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   // Initializes global variables.
   g_TmCanceled = 0;
 
@@ -246,7 +252,7 @@ static int Init(int argc, char *argv[], EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO
   return EPTMD_SUCCESS;
 }
 
-static int InitSignal(void)
+static result_t InitSignal(void)
 {
   sigset_t sigset;
   {
@@ -298,7 +304,7 @@ static void SignalCallback(int signal_id)
   g_TmCanceled = 1;
 }
 
-static int GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
+static result_t GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
 {
   ppd_file_t *p_ppd = nullptr;
   {
@@ -329,7 +335,7 @@ static int GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
 
     cupsFreeOptions(num_option, p_options);
   }
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   {
     // Get parameters
     if(EPTMD_SUCCESS == result)
@@ -357,7 +363,7 @@ static int GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
   return result;
 }
 
-static int GetModelSpecificFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
+static result_t GetModelSpecificFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
 {
   {
     char ppdKeyMotionUnit[] = "TmxMotionUnitHori";
@@ -394,7 +400,7 @@ static int GetModelSpecificFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
   return EPTMD_SUCCESS;
 }
 
-static int GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
+static result_t GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
 {
   char ppdKey[] = "TmxPaperReduction";
   ppd_choice_t *p_choice = ppdFindMarkedChoice(p_ppd, ppdKey);
@@ -428,7 +434,7 @@ static int GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
   return EPTMD_SUCCESS;
 }
 
-static int GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
+static result_t GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
 {
   char ppdKey[] = "TmxBuzzerAndDrawer";
   ppd_choice_t *p_choice = ppdFindMarkedChoice(p_ppd, ppdKey);
@@ -467,7 +473,7 @@ static int GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config
   return EPTMD_SUCCESS;
 }
 
-static int GetPaperCutFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
+static result_t GetPaperCutFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
 {
   char ppdKey[] = "TmxPaperCut";
   ppd_choice_t *p_choice = ppdFindMarkedChoice(p_ppd, ppdKey);
@@ -512,9 +518,9 @@ static void Exit(EPTMS_JOB_INFO_T *p_jobInfo, int *p_InputFd)
   }
 }
 
-static int DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
+static result_t DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   unsigned page = 0;
   result = StartJob(p_config, p_jobInfo);
 
@@ -576,10 +582,10 @@ static int DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
   return result;
 }
 
-static int StartJob(EPTMS_CONFIG_T *p_config,
-                    EPTMS_JOB_INFO_T *)
+static result_t StartJob(EPTMS_CONFIG_T *p_config,
+                         EPTMS_JOB_INFO_T *)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
 
   if(0 != g_TmCanceled)
   {
@@ -658,9 +664,9 @@ static int StartJob(EPTMS_CONFIG_T *p_config,
   return EPTMD_SUCCESS;
 }
 
-static int OpenDrawer(EPTMS_CONFIG_T *p_config)
+static result_t OpenDrawer(EPTMS_CONFIG_T *p_config)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
 
   if(TmDrawerNotUsed == p_config->drawerControl)
   {
@@ -673,9 +679,9 @@ static int OpenDrawer(EPTMS_CONFIG_T *p_config)
   return result;
 }
 
-static int SoundBuzzer(EPTMS_CONFIG_T *p_config)
+static result_t SoundBuzzer(EPTMS_CONFIG_T *p_config)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
 
   if(TmBuzzerNotUsed == p_config->buzzerControl)
   {
@@ -711,9 +717,11 @@ static int SoundBuzzer(EPTMS_CONFIG_T *p_config)
   return EPTMD_SUCCESS;
 }
 
-static int EndJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *, cups_page_header2_t *p_header)
+static result_t EndJob(EPTMS_CONFIG_T *p_config,
+                       EPTMS_JOB_INFO_T *,
+                       cups_page_header2_t *)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
 
   if(0 != g_TmCanceled)
   {
@@ -750,9 +758,9 @@ static int EndJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *, cups_page_header
   return EPTMD_SUCCESS;
 }
 
-static int DoPage(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
+static result_t DoPage(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
 {
-  int result;
+  result_t result;
   result = StartPage(p_config);
 
   if(EPTMD_SUCCESS == result)
@@ -773,7 +781,7 @@ static int DoPage(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
   return result;
 }
 
-static int StartPage(EPTMS_CONFIG_T *p_config)
+static result_t StartPage(EPTMS_CONFIG_T *p_config)
 {
   int result;
   // Send user file.
@@ -787,7 +795,8 @@ static int StartPage(EPTMS_CONFIG_T *p_config)
   return EPTMD_SUCCESS;
 }
 
-static int EndPage(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header)
+static result_t EndPage(EPTMS_CONFIG_T *p_config,
+                        cups_page_header2_t *)
 {
   int result;
 
@@ -826,9 +835,9 @@ static int EndPage(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header)
   return EPTMD_SUCCESS;
 }
 
-static int ReadRaster(cups_page_header2_t *p_header, cups_raster_t *p_raster, unsigned char *p_pageBuffer)
+static result_t ReadRaster(cups_page_header2_t *p_header, cups_raster_t *p_raster, unsigned char *p_pageBuffer)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   unsigned char *p_data;
   unsigned data_size = p_header->cupsBytesPerLine;
   p_data = (unsigned char *)malloc(data_size);
@@ -871,13 +880,13 @@ static void TransferRaster(unsigned char *p_pageBuffer, unsigned char *p_data, c
   memcpy(p_dest, p_data, p_header->cupsBytesPerLine);
 }
 
-static int WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, unsigned char *p_pageBuffer)
+static result_t WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_header, unsigned char *p_pageBuffer)
 {
   unsigned line_no = 0;
   unsigned start_line_no = 0; /* first raster line without top blank */
   unsigned last_line_no = 0; /* last raster line without bottom blank */
   unsigned char *p_data = nullptr;
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   // Get top margin
   start_line_no = FindBlackRasterLineTop(p_header, p_pageBuffer);
 
@@ -997,9 +1006,9 @@ static unsigned FindBlackRasterLineEnd(cups_page_header2_t *p_header, unsigned c
   return 0;
 }
 
-static int WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, unsigned lines)
+static result_t WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, unsigned lines)
 {
-  int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   unsigned char CommandSetAbsolutePrintPosition[4] = { ESC, '$', 0, 0 };
   result = WriteData(CommandSetAbsolutePrintPosition, sizeof(CommandSetAbsolutePrintPosition));
 
@@ -1043,8 +1052,9 @@ static int WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, unsig
   return EPTMD_SUCCESS;
 }
 
-static int WriteUserFile(char *p_printerName, const char *p_file_name)
+static result_t WriteUserFile(char *p_printerName, const char *p_file_name)
 {
+  result_t result = EPTMD_SUCCESS;
   // Output a file if it exists in a predetermined place. : /var/lib/tmx-cups
   std::ostringstream path;
   std::string os_specific_dirname;
@@ -1070,7 +1080,7 @@ static int WriteUserFile(char *p_printerName, const char *p_file_name)
   {
     char data[1024] = { 0 };
     unsigned int size = ReadUserFile(fd, data, sizeof(data));
-    int result = WriteData((unsigned char *)data, size);
+    result = WriteData((unsigned char *)data, size);
 
     if(EPTMD_SUCCESS != result)
     {
@@ -1107,15 +1117,15 @@ static unsigned int ReadUserFile(int fd, void *p_buffer, unsigned int buffer_siz
   return static_cast<unsigned int>(total_size);
 }
 
-static int WriteData(unsigned char *p_buffer, unsigned int size)
+static result_t WriteData(unsigned char *p_buffer, unsigned int size)
 {
   char *p_data = (char *)p_buffer;
-  unsigned int result = EPTMD_SUCCESS;
+  result_t result = EPTMD_SUCCESS;
   unsigned int count;
 
   for(count = 0; size > count; count += result)
   {
-    result = static_cast<unsigned int>(write(STDOUT_FILENO, (p_data + count), (size - count)));
+    result = static_cast<result_t>(write(STDOUT_FILENO, (p_data + count), (size - count)));
 
     if(EPTMD_SUCCESS == result)
     {
