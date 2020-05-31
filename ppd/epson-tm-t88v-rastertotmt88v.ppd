@@ -1,0 +1,119 @@
+*PPD-Adobe: "4.3"
+*% Copyright (C) Seiko Epson Corporation 2018. All rights reserved.
+*%
+*% PPD file for TM Series Linux CUPS Printer Driver.
+
+*FormatVersion: "4.3"
+*FileVersion: "2.0"
+*LanguageVersion: English
+*LanguageEncoding: ISOLatin1
+*PCFileName: "TM-T88V-NG.PPD"
+*Manufacturer: "EPSON"
+*Product: "(ThermalPrinter)"
+*ModelName:"EPSON TM-T88V"
+*ShortNickName:"TM-T88V"
+*NickName: "EPSON TM-T88V (raster-backport)"
+*PSVersion: "(3010.000) 0"
+*LanguageLevel: "3"
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*FileSystem: False
+*Throughput: "1"
+*LandscapeOrientation: Plus90
+*VariablePaperSize: True
+*TTRasterizer: Type42
+*cupsVersion: 1.2
+*cupsManualCopies: True
+*cupsModelNumber: 100
+*cupsFilter: "application/vnd.cups-raster 0 rastertotmt88v"
+*cupsLanguages: "en"
+
+*% Printer option settings
+*OpenGroup: General/General
+
+*% Page size settings.
+*OpenUI *PageSize/Media Size: PickOne
+*OrderDependency: 10 AnySetup *PageSize
+*DefaultPageSize:RP80x200
+*PageSize RP80x200/Roll paper 80 x 200 mm: "<</PageSize[205.0 566.9]/ImagingBBox null>>setpagedevice"
+*PageSize RP80x2000/Roll paper 80 x 2000 mm: "<</PageSize[205.0 5669.3]/ImagingBBox null>>setpagedevice"
+*PageSize RP58x200/Roll paper 58 x 200 mm: "<</PageSize[144.0 566.9]/ImagingBBox null>>setpagedevice"
+*PageSize RP58x2000/Roll paper 58 x 2000 mm: "<</PageSize[144.0 5669.3]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageSize
+
+*OpenUI *PageRegion: PickOne
+*OrderDependency: 10 AnySetup *PageRegion
+*DefaultPageRegion:RP80x200
+*PageRegion RP80x200/Roll paper 80 x 200 mm: "<</PageSize[205.0 566.9]/ImagingBBox null>>setpagedevice"
+*PageRegion RP80x2000/Roll paper 80 x 2000 mm: "<</PageSize[205.0 5669.3]/ImagingBBox null>>setpagedevice"
+*PageRegion RP58x200/Roll paper 58 x 200 mm: "<</PageSize[144.0 566.9]/ImagingBBox null>>setpagedevice"
+*PageRegion RP58x2000/Roll paper 58 x 2000 mm: "<</PageSize[144.0 5669.3]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageRegion
+
+*DefaultImageableArea: RP80x200
+*ImageableArea RP80x200/Roll paper 80 x 200 mm: "0.0 0.0 205.0 566.9"
+*ImageableArea RP80x2000/Roll paper 80 x 2000 mm: "0.0 0.0 205.0 5669.3"
+*ImageableArea RP58x200/Roll paper 58 x 200 mm: "0.0 0.0 144.0 566.9"
+*ImageableArea RP58x2000/Roll paper 58 x 2000 mm: "0.0 0.0 144.0 5669.3"
+
+*DefaultPaperDimension: RP80x200
+*PaperDimension RP80x200/Roll paper 80 x 200 mm: "205.0 566.9"
+*PaperDimension RP80x2000/Roll paper 80 x 2000 mm: "205.0 5669.3"
+*PaperDimension RP58x200/Roll paper 58 x 200 mm: "144.0 566.9"
+*PaperDimension RP58x2000/Roll paper 58 x 2000 mm: "144.0 5669.3"
+
+*% Custom page size settings.
+*MaxMediaWidth: "205.0"
+*MaxMediaHeight: "5669.3"
+*NonUIOrderDependency: 100 AnySetup *CustomPageSize
+*CustomPageSize True: "pop pop pop <</PageSize [ 5 -2 roll ]/ImagingBBox null>>setpagedevice"
+*ParamCustomPageSize Width: 1 points 72 205.0
+*ParamCustomPageSize Height: 2 points 72 5669.3
+*ParamCustomPageSize WidthOffset:  3 points 0 0
+*ParamCustomPageSize HeightOffset: 4 points 0 0
+*ParamCustomPageSize Orientation:  5 int 0 0
+
+*% Resolution settings.
+*OpenUI *Resolution/Resolution: PickOne
+*OrderDependency: 20 AnySetup *Resolution
+*DefaultResolution: 180x180dpi
+*Resolution 180x180dpi/180 x 180 dpi: "<</HWResolution[180 180]/cupsRowCount 24/cupsBitsPerColor 1>>setpagedevice"
+*CloseUI: *Resolution
+
+*% Horizontal and Vertical motion units.
+*TmxMotionUnitHori: "180"
+*TmxMotionUnitVert: "180"
+
+*% Paper reduction settings.
+*OpenUI *TmxPaperReduction/Paper Reduction: PickOne
+*OrderDependency: 30 AnySetup *TmxPaperReduction
+*DefaultTmxPaperReduction: Both
+*TmxPaperReduction Off/None: ""
+*TmxPaperReduction Top/Top: ""
+*TmxPaperReduction Bottom/Bottom: ""
+*TmxPaperReduction Both/Top & Bottom: ""
+*CloseUI: *TmxPaperReduction
+
+*% Buzzer / Cash Drawer settings.
+*OpenUI *TmxBuzzerAndDrawer/Buzzer/ Cash Drawer: PickOne
+*OrderDependency: 30 AnySetup *TmxBuzzerAndDrawer
+*DefaultTmxBuzzerAndDrawer: OpenDrawer1
+*TmxBuzzerAndDrawer NotUsed/Not used: ""
+*TmxBuzzerAndDrawer InternalBuzzer/Internal buzzer: ""
+*TmxBuzzerAndDrawer ExternalBuzzer/External buzzer: ""
+*TmxBuzzerAndDrawer OpenDrawer1/Open drawer #1: ""
+*TmxBuzzerAndDrawer OpenDrawer2/Open drawer #2: ""
+*CloseUI: *TmxBuzzerAndDrawer
+
+*% Paper source settings.
+*OpenUI *TmxPaperCut/Paper Cut: PickOne
+*OrderDependency: 30 AnySetup *TmxPaperCut
+*DefaultTmxPaperCut: CutPerJob
+*TmxPaperCut NoCut/No cut: ""
+*TmxPaperCut CutPerJob/Cut per job: ""
+*TmxPaperCut CutPerPage/Cut per page: ""
+*CloseUI: *TmxPaperCut
+
+*CloseGroup: General
+
+*% End

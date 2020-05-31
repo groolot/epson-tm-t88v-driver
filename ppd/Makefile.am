@@ -15,11 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA.
-SUBDIRS = .
+cupsppddir = $(CUPS_PPD_DIR)/epson-thermal-printer
+cupsppd_DATA = epson-tm-t88v-rastertotmt88v.ppd
 
-AM_CXXFLAGS = -I$(top_srcdir)/src -Wall -Werror -Wshadow -Wduplicated-cond -Wunused-parameter -Wsign-promo -Wconversion -Wsign-conversion -fstack-protector -Wno-deprecated -Wno-deprecated-declarations
-
-cupsfilterdir = $(CUPS_FILTER_DIR)
-cupsfilter_PROGRAMS = rastertotmt88v
-rastertotmt88v_SOURCES = rastertotmt88v.cc
-rastertotmt88v_CFLAGS = -DCUPS_FILTER_NAME=\"rastertotmt88v\"	-DCUPS_FILTER_PATH=\"$(CUPS_FILTER_DIR)\"
+EXTRA_DIST = $(cupsppd_DATA)

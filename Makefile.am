@@ -1,5 +1,2 @@
-SUBDIRS = src tests
-
-EXTRA_DIST = libtool ltmain.sh
-
+SUBDIRS = src ppd
 ACLOCAL_AMFLAGS = -Im4
