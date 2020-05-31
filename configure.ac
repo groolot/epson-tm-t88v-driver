@@ -15,7 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA.
-AC_INIT([rastertotmt88v], [0.1.0], [dev@groolot.net])
+AC_INIT([rastertotmt88v], [0.2.0], [dev@groolot.net])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([src/rastertotmt88v.cc])
@@ -82,7 +82,6 @@ fi
 AC_SUBST(CUPS_FILTER_DIR)
 AC_SUBST(CUPS_PPD_DIR)
 
-
 # Checks for libraries.
 AC_CHECK_HEADERS([\
   cups/cups.h \
@@ -90,19 +89,13 @@ AC_CHECK_HEADERS([\
   cups/raster.h \
 ])
 AC_CHECK_HEADERS([\
-  ctype.h \
+  cmath \
+  csignal \
+  cstdint \
   errno.h \
   fcntl.h \
-  malloc.h \
-  signal.h \
-  stdarg.h \
-  stddef.h \
-  stdlib.h \
-  string.h \
-  sys/stat.h \
-  sys/types.h \
-  time.h \
-  unistd.h \
+  sstream \
+  string \
 ])
 
 AC_SEARCH_LIBS([ppdOpenFile], [cups])

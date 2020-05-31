@@ -1,4 +1,4 @@
-/**********************************************************************************************************************
+/******************************************************************************
  *
  * Epson TM-T88V Printer Driver for GNU/Linux
  *
@@ -19,21 +19,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *********************************************************************************************************************/
+ *****************************************************************************/
 #include <cups/ppd.h>
 #include <cups/raster.h>
 
-#include <cstdint>
 #include <csignal>
-#include <fcntl.h>
+#include <cstdint>
 #include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <string>
+#include <fcntl.h>
+#include <cmath>
 #include <sstream>
-#include <math.h>
-#include <stdlib.h>
-#include <limits.h> // LONG_MAX
+#include <string>
 
 /*------------
  * Result code
