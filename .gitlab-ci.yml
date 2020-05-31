@@ -2,25 +2,18 @@ image: debian:stable
 
 before_script:
   - apt-get update -qq
-  - apt-get install -y -qq build-essential autoconf autoconf-archive automake libtool libcppunit-dev pkg-config
+  - apt-get install -y -qq build-essential autoconf autoconf-archive automake libcups2-dev libcupsimage2-dev
   - autoreconf --install --verbose --force
   - ./configure
 
 stages:
   - build
-  - test
   - deploy
 
 build:
   stage: build
   script:
     - make
-    - src/projet-exemple
-
-test:
-  stage: test
-  script:
-    - make check
 
 tarball:
   stage: deploy
@@ -28,7 +21,7 @@ tarball:
     - tags
     - master
   script:
-    - make distcheck
+    - make dist
   artifacts:
     name: "tarball"
     paths:
