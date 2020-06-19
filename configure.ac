@@ -15,6 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA.
+AC_PREREQ([2.69])
 AC_INIT([rastertotmt88v], [0.2.0], [dev@groolot.net])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AM_SILENT_RULES([yes])
