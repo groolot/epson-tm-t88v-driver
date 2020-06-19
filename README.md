@@ -12,7 +12,7 @@ plateforms.
 
 # How to use
 
-See INSTALL.md file.
+See [install instructions](INSTALL.md) file.
 
 # Copyright / License
 
