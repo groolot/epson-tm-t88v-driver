@@ -31,13 +31,6 @@
 #include <sstream>
 #include <string>
 
-/*------------
- * Result code
- *------------*/
-#define EPTMD_SUCCESS (0) // Processing succeeded.
-#define EPTMD_FAILED (1) // Processing failed.
-#define EPTMD_CANCEL (2) // Processing canceled.
-
 /*--------------------
  * command declaration
  *--------------------*/
@@ -52,6 +45,57 @@
 /*-----------------
  * enum declaration
  *-----------------*/
+typedef enum
+{
+  SUCCESS = 0,
+  FAILED = 1,
+  CANCEL = 2,
+  // Error codes
+  E_INIT_ARGS = 1001,
+  E_INIT_FAILED_OPEN_RASTER_FILE = 1002,
+  E_INIT_FAILED_CUPS_RASTER_READ = 1003,
+  //
+  E_STARTJOB_FAILED_SET_DEVICE = 2101,
+  E_STARTJOB_FAILED_SET_PRINT_SHEET = 2102,
+  E_STARTJOB_FAILED_SET_CONFIG_SHEET = 2103,
+  E_STARTJOB_FAILED_SET_NEAREND_PRINT = 2104,
+  E_STARTJOB_FAILED_SET_BASE_MOTION_UNIT = 2105,
+  E_STARTJOB_FAILED_OPEN_DRAWER = 2106,
+  E_STARTJOB_FAILED_SOUND_BUZZER = 2107,
+  E_STARTJOB_FAILED_WRITE_USER_FILE = 2108,
+  //
+  E_ENDJOB_FAILED_WRITE_USER_FILE = 2201,
+  E_ENDJOB_FAILED_CUT = 2202,
+  //
+  E_STARTPAGE_FAILED_WRITE_USER_FILE = 3102,
+  //
+  E_ENDPAGE_FAILED_WRITE_USER_FILE = 3201,
+  E_ENDPAGE_FAILED_CUT = 3202,
+  //
+  E_READRASTER_FAILED_DATA_ALLOC = 3301,
+  E_READRASTER_FAILED_READ_PIXELS = 3302,
+  //
+  E_WRITERASTER_FAILED_WRITE_BAND = 3403,
+  E_WRITERASTER_FAILED_WRITE_RASTER = 3404,
+  //
+  E_GETPARAMS_OPEN_PPD_FILE = 4001,
+  E_GETPARAMS_PPD_CONFLICTED_OPT = 4002,
+  //
+  E_GETMODELPPD_ATTR_HMOTION_NOTFIND = 4101,
+  E_GETMODELPPD_ATTR_HMOTION_OUT_OF_RANGE = 4102,
+  E_GETMODELPPD_ATTR_VMOTION_NOTFIND = 4103,
+  E_GETMODELPPD_ATTR_VMOTION_OUT_OF_RANGE = 4104,
+  //
+  E_GETPAPERREDUCPPD_ATTR_NOTFIND = 4201,
+  E_GETPAPERREDUCPPD_ATTR_OUT_OF_RANGE = 4202,
+  //
+  E_GETBUZZERDRAWERPPD_ATTR_NOTFIND = 4301,
+  E_GETBUZZERDRAWERPPD_ATTR_OUT_OF_RANGE = 4302,
+  //
+  E_GETPAPERCUTPPD_ATTR_NOTFIND = 4401,
+  E_GETPAPERCUTPPD_ATTR_OUT_OF_RANGE = 4402,
+} EPTME_RESULT_CODE; // Result Code
+
 typedef enum
 {
   TmPaperReductionOff = 0,
@@ -150,12 +194,12 @@ int main(int argc, char **argv)
   EPTMS_JOB_INFO_T JobInfo = {0};
   EPTMS_CONFIG_T Config = {0};
   int InputFd = -1;
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
   // Initializes process.
   result = Init(argc, argv, &Config, &JobInfo, &InputFd);
 
   // Processing print job.
-  if(EPTMD_SUCCESS == result)
+  if(SUCCESS == result)
   {
     result = DoJob(&Config, &JobInfo);
   }
@@ -164,7 +208,7 @@ int main(int argc, char **argv)
   Exit(&JobInfo, &InputFd);
 
   // Error log output.
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     fprintf(stderr, "ERROR: Error Code=%d\n", result);
   }
@@ -191,38 +235,36 @@ static result_t Init(int argc, char *argv[],
                      EPTMS_JOB_INFO_T *p_jobInfo,
                      int *p_InputFd)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
   // Initializes global variables.
   g_TmCanceled = 0;
 
   // Check parameters.
   if((nullptr == argv) || ((6 != argc) && (7 != argc)))
   {
-    return 1001;
+    return E_INIT_ARGS;
   }
 
   // Initializes signals.
   result = InitSignal();
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
 
+  // Open a raster stream.
+  if(6 == argc)
   {
-    // Open a raster stream.
-    if(6 == argc)
-    {
-      *p_InputFd = 0;
-    }
-    else if(7 == argc)
-    {
-      *p_InputFd = open(argv[6], O_RDONLY);
+    *p_InputFd = 0;
+  }
+  else if(7 == argc)
+  {
+    *p_InputFd = open(argv[6], O_RDONLY);
 
-      if(*p_InputFd < 0)
-      {
-        return 1002;
-      }
+    if(*p_InputFd < 0)
+    {
+      return E_INIT_FAILED_OPEN_RASTER_FILE;
     }
     else {}
 
@@ -230,14 +272,14 @@ static result_t Init(int argc, char *argv[],
 
     if(nullptr == p_jobInfo->p_raster)
     {
-      return 1003;
+      return E_INIT_FAILED_CUPS_RASTER_READ;
     }
   }
 
   // Get parameters.
   result = GetParameters(argv, p_config);
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
@@ -245,7 +287,7 @@ static result_t Init(int argc, char *argv[],
   // Get printer name.
   p_config->p_printerName = argv[0];
   p_config->maxBandLines = 256;
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t InitSignal(void)
@@ -291,7 +333,7 @@ static result_t InitSignal(void)
     return 1106;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static void SignalCallback(int signal_id)
@@ -331,25 +373,25 @@ static result_t GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
 
     cupsFreeOptions(num_option, p_options);
   }
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
   {
     // Get parameters
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetModelSpecificFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetPaperReductionFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetPaperCutFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetBuzzerAndDrawerFromPPD(p_ppd, p_config);
     }
@@ -367,14 +409,14 @@ static result_t GetModelSpecificFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_con
 
     if(nullptr == p_attribute)
     {
-      return 4101;
+      return E_GETMODELPPD_ATTR_HMOTION_NOTFIND;
     }
 
     p_config->h_motionUnit = (unsigned char)atol(p_attribute->value);
 
     if((0 == p_config->h_motionUnit) || (255 < p_config->h_motionUnit)) // GS P Command Specification
     {
-      return 4102;
+      return E_GETMODELPPD_ATTR_HMOTION_OUT_OF_RANGE;
     }
   }
   {
@@ -383,17 +425,17 @@ static result_t GetModelSpecificFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_con
 
     if(nullptr == p_attribute)
     {
-      return 4103;
+      return E_GETMODELPPD_ATTR_VMOTION_NOTFIND;
     }
 
     p_config->v_motionUnit = (unsigned char)atol(p_attribute->value);
 
     if((0 == p_config->v_motionUnit) || (255 < p_config->v_motionUnit)) // GS P Command Specification
     {
-      return 4104;
+      return E_GETMODELPPD_ATTR_VMOTION_OUT_OF_RANGE;
     }
   }
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
@@ -403,7 +445,7 @@ static result_t GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_co
 
   if(nullptr == p_choice)
   {
-    return 4201;
+    return E_GETPAPERREDUCPPD_ATTR_NOTFIND;
   }
 
   if(0 == strcmp("Off", p_choice->choice))
@@ -424,10 +466,10 @@ static result_t GetPaperReductionFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_co
   }
   else
   {
-    return 4202;
+    return E_GETPAPERREDUCPPD_ATTR_OUT_OF_RANGE;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
@@ -437,7 +479,7 @@ static result_t GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_c
 
   if(nullptr == p_choice)
   {
-    return 4301;
+    return E_GETBUZZERDRAWERPPD_ATTR_NOTFIND;
   }
 
   if(0 == strcmp("NotUsed", p_choice->choice))
@@ -463,10 +505,10 @@ static result_t GetBuzzerAndDrawerFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_c
   }
   else
   {
-    return 4302;
+    return E_GETBUZZERDRAWERPPD_ATTR_OUT_OF_RANGE;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t GetPaperCutFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
@@ -476,7 +518,7 @@ static result_t GetPaperCutFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
 
   if(nullptr == p_choice)
   {
-    return 4401;
+    return E_GETPAPERCUTPPD_ATTR_NOTFIND;
   }
 
   if(0 == strcmp("NoCut", p_choice->choice))
@@ -493,10 +535,10 @@ static result_t GetPaperCutFromPPD(ppd_file_t *p_ppd, EPTMS_CONFIG_T *p_config)
   }
   else
   {
-    return 4402;
+    return E_GETPAPERCUTPPD_ATTR_OUT_OF_RANGE;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static void Exit(EPTMS_JOB_INFO_T *p_jobInfo, int *p_InputFd)
@@ -516,15 +558,15 @@ static void Exit(EPTMS_JOB_INFO_T *p_jobInfo, int *p_InputFd)
 
 static result_t DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
   unsigned page = 0;
   result = StartJob(p_config, p_jobInfo);
 
-  while(EPTMD_SUCCESS == result)
+  while(SUCCESS == result)
   {
     if(0 == cupsRasterReadHeader2(p_jobInfo->p_raster, &p_jobInfo->pageHeader))
     {
-      result = EPTMD_SUCCESS;
+      result = SUCCESS;
       break;
     }
 
@@ -566,7 +608,7 @@ static result_t DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
     p_jobInfo->p_pageBuffer = nullptr;
   }
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     EndJob(p_config, p_jobInfo, &p_jobInfo->pageHeader);
   }
@@ -581,11 +623,11 @@ static result_t DoJob(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
 static result_t StartJob(EPTMS_CONFIG_T *p_config,
                          EPTMS_JOB_INFO_T *)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
 
   if(0 != g_TmCanceled)
   {
-    return EPTMD_CANCEL;
+    return CANCEL;
   }
 
   {
@@ -593,33 +635,33 @@ static result_t StartJob(EPTMS_CONFIG_T *p_config,
     unsigned char CommandSetDevice[3 + 2] = { ESC, '=', 0x01, ESC, '@' };
     result = WriteData(CommandSetDevice, sizeof(CommandSetDevice));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 2101;
+      return E_STARTJOB_FAILED_SET_DEVICE;
     }
 
     unsigned char CommandSetPrintSheet[4] = { ESC, 'c', '0', 0x02 };
     result = WriteData(CommandSetPrintSheet, sizeof(CommandSetPrintSheet));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 2102;
+      return E_STARTJOB_FAILED_SET_PRINT_SHEET;
     }
 
     unsigned char CommandSetConfigSheet[4] = { ESC, 'c', '1', 0x02 };
     result = WriteData(CommandSetConfigSheet, sizeof(CommandSetConfigSheet));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 2103;
+      return E_STARTJOB_FAILED_SET_CONFIG_SHEET;
     }
 
     unsigned char CommandSetNearendPrint[4] = { ESC, 'c', '3', 0x00 };
     result = WriteData(CommandSetNearendPrint, sizeof(CommandSetNearendPrint));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 2104;
+      return E_STARTJOB_FAILED_SET_NEAREND_PRINT;
     }
 
     unsigned char CommandSetBaseMotionUnit[4] = { GS, 'P', 0x00, 0x00 };
@@ -627,46 +669,46 @@ static result_t StartJob(EPTMS_CONFIG_T *p_config,
     CommandSetBaseMotionUnit[3] = p_config->v_motionUnit;
     result = WriteData(CommandSetBaseMotionUnit, sizeof(CommandSetBaseMotionUnit));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 2105;
+      return E_STARTJOB_FAILED_SET_BASE_MOTION_UNIT;
     }
   }
 
   // Drawer open.
   result = OpenDrawer(p_config);
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 2106;
+    return E_STARTJOB_FAILED_OPEN_DRAWER;
   }
 
   // Sound buzzer.
   result = SoundBuzzer(p_config);
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 2107;
+    return E_STARTJOB_FAILED_SOUND_BUZZER;
   }
 
   // Send user file.
   result = WriteUserFile(p_config->p_printerName, "StartJob.prn");
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 2108;
+    return E_STARTJOB_FAILED_WRITE_USER_FILE;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t OpenDrawer(EPTMS_CONFIG_T *p_config)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
 
   if(TmDrawerNotUsed == p_config->drawerControl)
   {
-    return EPTMD_SUCCESS;
+    return SUCCESS;
   }
 
   unsigned char Command[5] = { ESC, 'p', 0, 50 /* on time */, 200 /* off time */ };
@@ -677,11 +719,11 @@ static result_t OpenDrawer(EPTMS_CONFIG_T *p_config)
 
 static result_t SoundBuzzer(EPTMS_CONFIG_T *p_config)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
 
   if(TmBuzzerNotUsed == p_config->buzzerControl)
   {
-    return EPTMD_SUCCESS;
+    return SUCCESS;
   }
   else if(TmBuzzerInternal == p_config->buzzerControl) // Sound internal buzzer
   {
@@ -692,7 +734,7 @@ static result_t SoundBuzzer(EPTMS_CONFIG_T *p_config)
     {
       result = WriteData(Command, sizeof(Command));
 
-      if(EPTMD_SUCCESS != result)
+      if(SUCCESS != result)
       {
         return result;
       }
@@ -703,33 +745,33 @@ static result_t SoundBuzzer(EPTMS_CONFIG_T *p_config)
     unsigned char Command[10] = { ESC, '(', 'A', 5, 0, 97, 100, 1, 50/* on time */, 200/* off time */ };
     result = WriteData(Command, sizeof(Command));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
       return result;
     }
   }
   else {}
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t EndJob(EPTMS_CONFIG_T *p_config,
                        EPTMS_JOB_INFO_T *,
                        cups_page_header2_t *)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
 
   if(0 != g_TmCanceled)
   {
-    return EPTMD_CANCEL;
+    return CANCEL;
   }
 
   // Send user file.
   result = WriteUserFile(p_config->p_printerName, "EndJob.prn");
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 2201;
+    return E_ENDJOB_FAILED_WRITE_USER_FILE;
   }
 
   // Feed and cut paper.
@@ -740,7 +782,7 @@ static result_t EndJob(EPTMS_CONFIG_T *p_config,
     case TmCutPerJob:
       result = WriteData(Command, sizeof(Command));
 
-      if(EPTMD_SUCCESS != result)
+      if(SUCCESS != result)
       {
         return 2202;
       }
@@ -751,7 +793,7 @@ static result_t EndJob(EPTMS_CONFIG_T *p_config,
       break;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t DoPage(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
@@ -759,17 +801,17 @@ static result_t DoPage(EPTMS_CONFIG_T *p_config, EPTMS_JOB_INFO_T *p_jobInfo)
   result_t result;
   result = StartPage(p_config);
 
-  if(EPTMD_SUCCESS == result)
+  if(SUCCESS == result)
   {
     result = ReadRaster(&p_jobInfo->pageHeader, p_jobInfo->p_raster, p_jobInfo->p_pageBuffer);
   }
 
-  if(EPTMD_SUCCESS == result)
+  if(SUCCESS == result)
   {
     result = WriteRaster(p_config, &p_jobInfo->pageHeader, p_jobInfo->p_pageBuffer);
   }
 
-  if(EPTMD_SUCCESS == result)
+  if(SUCCESS == result)
   {
     result = EndPage(p_config, &p_jobInfo->pageHeader);
   }
@@ -783,12 +825,12 @@ static result_t StartPage(EPTMS_CONFIG_T *p_config)
   // Send user file.
   result = WriteUserFile(p_config->p_printerName, "StartPage.prn");
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 3102;
+    return E_STARTPAGE_FAILED_WRITE_USER_FILE;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t EndPage(EPTMS_CONFIG_T *p_config,
@@ -798,15 +840,15 @@ static result_t EndPage(EPTMS_CONFIG_T *p_config,
 
   if(0 != g_TmCanceled)
   {
-    return EPTMD_CANCEL;
+    return CANCEL;
   }
 
   // Send user file.
   result = WriteUserFile(p_config->p_printerName, "EndPage.prn");
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
-    return 3201;
+    return E_ENDPAGE_FAILED_WRITE_USER_FILE;
   }
 
   // Feed and cut paper.
@@ -817,7 +859,7 @@ static result_t EndPage(EPTMS_CONFIG_T *p_config,
     case TmCutPerPage:
       result = WriteData(Command, sizeof(Command));
 
-      if(EPTMD_SUCCESS != result)
+      if(SUCCESS != result)
       {
         return 3202;
       }
@@ -828,19 +870,19 @@ static result_t EndPage(EPTMS_CONFIG_T *p_config,
       break;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t ReadRaster(cups_page_header2_t *p_header, cups_raster_t *p_raster, unsigned char *p_pageBuffer)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result;
   unsigned char *p_data;
   unsigned data_size = p_header->cupsBytesPerLine;
   p_data = (unsigned char *)malloc(data_size);
 
   if(nullptr == p_data)
   {
-    return 3301;
+    return E_READRASTER_FAILED_DATA_ALLOC;
   }
 
   memset(p_data, 0, data_size);
@@ -850,7 +892,7 @@ static result_t ReadRaster(cups_page_header2_t *p_header, cups_raster_t *p_raste
   {
     if(0 != g_TmCanceled)
     {
-      result = EPTMD_CANCEL;
+      result = CANCEL;
       break;
     }
 
@@ -859,7 +901,7 @@ static result_t ReadRaster(cups_page_header2_t *p_header, cups_raster_t *p_raste
     if(data_size > num_bytes_read)
     {
       fprintf(stderr, "DEBUG: cupsRasterReadPixels() = %u:%u/%u\n", (i + 1), num_bytes_read, data_size);
-      result = 3302;
+      result = E_READRASTER_FAILED_READ_PIXELS;
       break;
     }
 
@@ -882,13 +924,13 @@ static result_t WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_hea
   unsigned start_line_no = 0; /* first raster line without top blank */
   unsigned last_line_no = 0; /* last raster line without bottom blank */
   unsigned char *p_data = nullptr;
-  result_t result = EPTMD_SUCCESS;
+  result_t result;
   // Get top margin
   start_line_no = FindBlackRasterLineTop(p_header, p_pageBuffer);
 
   if(p_header->cupsHeight == start_line_no) /* This page has not image */
   {
-    return EPTMD_SUCCESS;
+    return SUCCESS;
   }
 
   // Get bottom margin
@@ -902,14 +944,14 @@ static result_t WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_hea
     p_data = p_pageBuffer + (EPTMD_BITS_TO_BYTES(p_header->cupsWidth) * line_no);
     result = WriteBand(p_header, p_data, p_config->maxBandLines);
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 3403;
+      return E_WRITERASTER_FAILED_WRITE_BAND;
     }
 
     if(0 != g_TmCanceled)
     {
-      return EPTMD_CANCEL;
+      return CANCEL;
     }
   }
 
@@ -919,13 +961,13 @@ static result_t WriteRaster(EPTMS_CONFIG_T *p_config, cups_page_header2_t *p_hea
     p_data = p_pageBuffer + (EPTMD_BITS_TO_BYTES(p_header->cupsWidth) * line_no);
     result = WriteBand(p_header, p_data, (last_line_no - line_no));
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
-      return 3404;
+      return E_WRITERASTER_FAILED_WRITE_RASTER;
     }
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static void AvoidDisturbingData(cups_page_header2_t *p_header, unsigned char *p_pageBuffer, unsigned start_line_no, unsigned last_line_no)
@@ -1004,11 +1046,10 @@ static unsigned FindBlackRasterLineEnd(cups_page_header2_t *p_header, unsigned c
 
 static result_t WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, unsigned lines)
 {
-  result_t result = EPTMD_SUCCESS;
   unsigned char CommandSetAbsolutePrintPosition[4] = { ESC, '$', 0, 0 };
-  result = WriteData(CommandSetAbsolutePrintPosition, sizeof(CommandSetAbsolutePrintPosition));
+  result_t result = WriteData(CommandSetAbsolutePrintPosition, sizeof(CommandSetAbsolutePrintPosition));
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
@@ -1025,14 +1066,14 @@ static result_t WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, 
   CommandSetGraphicsdataGS8L112[16] = (unsigned char)((lines >> 8) & 0xff);
   result = WriteData(CommandSetGraphicsdataGS8L112, sizeof(CommandSetGraphicsdataGS8L112));
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
 
   result = WriteData(p_data, (unsigned int)(EPTMD_BITS_TO_BYTES(width) * lines));
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
@@ -1040,17 +1081,17 @@ static result_t WriteBand(cups_page_header2_t *p_header, unsigned char *p_data, 
   unsigned char CommandSetGraphicsdataGSpL50[7] = { GS, '(', 'L', 2, 0, 48, 50 };
   result = WriteData(CommandSetGraphicsdataGSpL50, sizeof(CommandSetGraphicsdataGSpL50));
 
-  if(EPTMD_SUCCESS != result)
+  if(SUCCESS != result)
   {
     return result;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static result_t WriteUserFile(char *p_printerName, const char *p_file_name)
 {
-  result_t result = EPTMD_SUCCESS;
+  result_t result;
   // Output a file if it exists in a predetermined place. : /var/lib/tmx-cups
   std::ostringstream path;
   std::string os_specific_dirname;
@@ -1066,10 +1107,10 @@ static result_t WriteUserFile(char *p_printerName, const char *p_file_name)
   {
     if(ENOENT == errno) // No such file or directory
     {
-      return EPTMD_SUCCESS;
+      return SUCCESS;
     }
 
-    return EPTMD_FAILED;
+    return FAILED;
   }
 
   while(1)
@@ -1078,19 +1119,19 @@ static result_t WriteUserFile(char *p_printerName, const char *p_file_name)
     unsigned int size = ReadUserFile(fd, data, sizeof(data));
     result = WriteData((unsigned char *)data, size);
 
-    if(EPTMD_SUCCESS != result)
+    if(SUCCESS != result)
     {
       close(fd);
-      return EPTMD_FAILED;
+      return FAILED;
     }
   }
 
   if(close(fd) < 0)
   {
-    return EPTMD_FAILED;
+    return FAILED;
   }
 
-  return EPTMD_SUCCESS;
+  return SUCCESS;
 }
 
 static unsigned int ReadUserFile(int fd, void *p_buffer, unsigned int buffer_size)
@@ -1116,18 +1157,18 @@ static unsigned int ReadUserFile(int fd, void *p_buffer, unsigned int buffer_siz
 static result_t WriteData(unsigned char *p_buffer, unsigned int size)
 {
   char *p_data = (char *)p_buffer;
-  result_t result = EPTMD_SUCCESS;
+  result_t result;
   unsigned int count;
 
   for(count = 0; size > count; count += result)
   {
     result = static_cast<result_t>(write(STDOUT_FILENO, (p_data + count), (size - count)));
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       break;
     }
   }
 
-  return (count == size) ? EPTMD_SUCCESS : EPTMD_FAILED;
+  return (count == size) ? SUCCESS : FAILED;
 }
