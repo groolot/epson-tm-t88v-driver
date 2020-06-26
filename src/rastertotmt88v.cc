@@ -253,15 +253,14 @@ static result_t Init(int argc, char *argv[],
     return result;
   }
 
+  // Open a raster stream.
+  if(6 == argc)
   {
-    // Open a raster stream.
-    if(6 == argc)
-    {
-      *p_InputFd = 0;
-    }
-    else if(7 == argc)
-    {
-      *p_InputFd = open(argv[6], O_RDONLY);
+    *p_InputFd = 0;
+  }
+  else if(7 == argc)
+  {
+    *p_InputFd = open(argv[6], O_RDONLY);
 
     if(*p_InputFd < 0)
     {
@@ -374,25 +373,25 @@ static result_t GetParameters(char *argv[], EPTMS_CONFIG_T *p_config)
 
     cupsFreeOptions(num_option, p_options);
   }
-  result_t result = EPTMD_SUCCESS;
+  result_t result = SUCCESS;
   {
     // Get parameters
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetModelSpecificFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetPaperReductionFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetPaperCutFromPPD(p_ppd, p_config);
     }
 
-    if(EPTMD_SUCCESS == result)
+    if(SUCCESS == result)
     {
       result = GetBuzzerAndDrawerFromPPD(p_ppd, p_config);
     }
@@ -783,7 +782,7 @@ static result_t EndJob(EPTMS_CONFIG_T *p_config,
     case TmCutPerJob:
       result = WriteData(Command, sizeof(Command));
 
-      if(EPTMD_SUCCESS != result)
+      if(SUCCESS != result)
       {
         return 2202;
       }
@@ -860,7 +859,7 @@ static result_t EndPage(EPTMS_CONFIG_T *p_config,
     case TmCutPerPage:
       result = WriteData(Command, sizeof(Command));
 
-      if(EPTMD_SUCCESS != result)
+      if(SUCCESS != result)
       {
         return 3202;
       }
