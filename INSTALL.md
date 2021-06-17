@@ -16,7 +16,7 @@ following requirements installed:
 
 You can install all you need on Debian GNU/Linux like distribution.
 ```
-apt update && apt install build-essential autoconf autoconf-archive automake libcups2-dev libcupsimage2-dev
+apt update && apt install build-essential autoconf autoconf-archive automake libcups2-dev libcupsimage2-dev cups
 ```
 
 # Configuration
