@@ -195,23 +195,20 @@ int main(int argc, char **argv)
   EPTMS_CONFIG_T Config = {0};
   int InputFd = -1;
   result_t result = SUCCESS;
-  // Initializes process.
-  result = Init(argc, argv, &Config, &JobInfo, &InputFd);
 
-  // Processing print job.
-  if(SUCCESS == result)
+  // Initializes process.
+  if(SUCCESS == Init(argc, argv, &Config, &JobInfo, &InputFd))
   {
-    result = DoJob(&Config, &JobInfo);
+    // Processing print job.
+    if(SUCCESS != DoJob(&Config, &JobInfo))
+    {
+      // Error log output.
+      fprintf(stderr, "ERROR: Error Code=%d\n", result);
+    }
   }
 
   // Finalizes process.
   Exit(&JobInfo, &InputFd);
-
-  // Error log output.
-  if(SUCCESS != result)
-  {
-    fprintf(stderr, "ERROR: Error Code=%d\n", result);
-  }
 
   // Output message for debugging.
   fprintf_DebugLog(&Config);
